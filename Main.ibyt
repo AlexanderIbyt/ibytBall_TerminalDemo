@@ -1,0 +1,212 @@
+// Linux Terminal Demonstration Ball2
+// (c) Alexander Zima - https://www.ibyt.tech
+
+import <ConsoleGfx.ibyt>
+import <Basic.ibyt>
+
+// Alle Variablen müssen am Modul-Anfang stehen
+int64 dx1
+int64 dy1
+int64 dx2
+int64 dy2
+int64 dx3
+int64 dy3
+
+int64 x1
+int64 y1
+int64 x2
+int64 y2
+int64 x3
+int64 y3
+
+int64 active1: 1
+int64 active2: 0
+int64 active3: 0
+int64 timer2: 0
+int64 timer3: 0
+
+Start{
+    
+    // Init
+    call ConsoleGfx.UpdateSize(_)
+    call ConsoleGfx.Clear(base)
+    call ConsoleGfx.CursorOff(_)
+    call ConsoleGfx.RawOn(_)
+
+    // --- Sprites definieren ---
+    prepare $pBase: "#", $temp: 0, $work: 0
+    call ConsoleGfx.BuildSprite(_, base, solid temp, solid work)
+
+    prepare $pBase: "#", $temp: 0, $work: 1
+    call ConsoleGfx.BuildSprite(_, base, solid temp, solid work)
+
+    prepare $pBase: "#", $temp: 0, $work: 2
+    call ConsoleGfx.BuildSprite(_, base, solid temp, solid work)
+
+
+    // --- BALL 1: Startposition & Zufalls-Richtung ---
+    prepare $base: 5, $temp: 30
+    call Basic.Random(solid base, solid temp, focus counter)
+    x1: $counter
+    
+    prepare $base: 3, $temp: 15
+    call Basic.Random(solid base, solid temp, focus counter)
+    y1: $counter
+    
+    prepare $base: 0, $temp: x1, $work: y1
+    call ConsoleGfx.DrawSprite(_, base, solid temp, solid work)
+
+    dx1: 1
+    prepare $base: 0, $temp: 1
+    call Basic.Random(solid base, solid temp, focus counter)
+    if ($counter = 0){ dx1: -1 }
+    
+    dy1: 1
+    prepare $base: 0, $temp: 1
+    call Basic.Random(solid base, solid temp, focus counter)
+    if ($counter = 0){ dy1: -1 }
+
+
+    // --- BALL 2: Startposition & Zufalls-Richtung ---
+    prepare $base: 5, $temp: 30
+    call Basic.Random(solid base, solid temp, focus counter)
+    x2: $counter
+    
+    prepare $base: 3, $temp: 15
+    call Basic.Random(solid base, solid temp, focus counter)
+    y2: $counter
+
+    dx2: 1
+    prepare $base: 0, $temp: 1 
+    call Basic.Random(solid base, solid temp, focus counter)
+    
+    if ($counter = 0){ dx2: -1 }
+    dy2: 1
+    prepare $base: 0, $temp: 1
+    call Basic.Random(solid base, solid temp, focus counter)
+    if ($counter = 0){ dy2: -1 }
+
+
+    // --- BALL 3: Startposition & Zufalls-Richtung ---
+    prepare $base: 5, $temp: 30
+    call Basic.Random(solid base, solid temp, focus counter)
+    x3: $counter
+    
+    prepare $base: 3, $temp: 15
+    call Basic.Random(solid base, solid temp, focus counter)
+    y3: $counter
+
+    dx3: 1
+    prepare $base: 0, $temp: 1
+    call Basic.Random(solid base, solid temp, focus counter)
+    
+    if ($counter = 0){ dx3: -1 }
+    dy3: 1
+    
+    prepare $base: 0, $temp: 1
+    call Basic.Random(solid base, solid temp, focus counter)
+    if ($counter = 0){ dy3: -1 }
+
+	// ========================================
+	// Game-Loop
+	
+    ->Loop
+    
+        // Leertaste beendet das Programm
+        call ConsoleGfx.GetKey(focus base)
+        goto_flag not_carry NoKey
+        compare($base = 32) goto_true Ende
+        
+        ->NoKey
+
+        // ==========================================
+        // --- BALL 1 (Sprite 0): Getrennte Achsen ---
+        // ==========================================
+        // 1. Waagerecht bewegen
+        prepare $base: 0, $temp: dx1, $work: 0
+        call ConsoleGfx.MoveSprite(_, base, solid temp, solid work)
+        goto_flag carry MoveY1
+        dx1: 0 - dx1
+
+        ->MoveY1
+        // 2. Senkrecht bewegen
+        prepare $base: 0, $temp: 0, $work: dy1
+        call ConsoleGfx.MoveSprite(_, base, solid temp, solid work)
+        goto_flag carry CheckBall2
+        dy1: 0 - dy1
+
+
+        // ==========================================
+        // --- BALL 2 (Sprite 1) ---
+        // ==========================================
+        ->CheckBall2
+		    _: active2
+		    if (_ = 0) {
+		        timer2++
+		        _: timer2
+		        if (_ > 30) { 
+		            active2: 1 
+		            prepare $base: 1, $temp: x2, $work: y2
+		            call ConsoleGfx.DrawSprite(_, base, solid temp, solid work)
+		        }
+		        goto CheckBall3
+		    }
+
+        // 1. Waagerecht bewegen
+        prepare $base: 1, $temp: dx2, $work: 0
+        call ConsoleGfx.MoveSprite(_, base, solid temp, solid work)
+        goto_flag carry MoveY2
+        dx2: 0 - dx2
+
+        ->MoveY2
+		    // 2. Senkrecht bewegen
+		    prepare $base: 1, $temp: 0, $work: dy2
+		    call ConsoleGfx.MoveSprite(_, base, solid temp, solid work)
+		    goto_flag carry CheckBall3
+		    dy2: 0 - dy2
+
+
+        // ==========================================
+        // --- BALL 3 (Sprite 2) ---
+        // ==========================================
+        ->CheckBall3
+		    _: active3
+		    if (_ = 0) {
+		        timer3++
+		        _: timer3
+		        if (_ > 60) { 
+		            active3: 1 
+		            prepare $base: 2, $temp: x3, $work: y3
+		            call ConsoleGfx.DrawSprite(_, base, solid temp, solid work)
+		        }
+		        goto FrameWait
+		    }
+
+        // 1. Waagerecht bewegen
+        prepare $base: 2, $temp: dx3, $work: 0
+        call ConsoleGfx.MoveSprite(_, base, solid temp, solid work)
+        goto_flag carry MoveY3
+        dx3: 0 - dx3
+
+        ->MoveY3
+		    // 2. Senkrecht bewegen
+		    prepare $base: 2, $temp: 0, $work: dy3
+		    call ConsoleGfx.MoveSprite(_, base, solid temp, solid work)
+		    goto_flag carry FrameWait
+		    dy3: 0 - dy3
+
+
+        // --- FRAME DELAY ---
+        ->FrameWait
+		    prepare $base: 50
+		    call ConsoleGfx.Sleep(solid base)
+		    goto Loop↑ // GAME-LOOP
+
+    ->Ende
+		call ConsoleGfx.RawOff(_)
+		call ConsoleGfx.ClearPoint(focus base, focus counter)
+		call ConsoleGfx.CursorOn(_)
+
+    prepare $base: 0, $temp: 0
+    call ConsoleGfx.SetCursor(base, solid temp, work, index, slot)
+}
